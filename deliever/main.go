@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"log"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -22,17 +23,14 @@ type Request events.APIGatewayProxyRequest
 
 // Handler is our lambda handler invoked by the `lambda.Start` function call
 func Handler(ctx context.Context, request Request) (Response, error) {
-	requestBody := map[string]interface{}{}
-	err := json.Unmarshal([]byte(request.Body), &requestBody)
-
+	update := tgbotapi.Update{}
+	err := json.Unmarshal([]byte(request.Body), &update)
 	if err != nil {
 		return Response{StatusCode: 400}, nil
 	}
-	requestBody["id"] = requestBody["update_id"]
-	message := map[string]interface{}{requestBody["message"]}
 
 	// Marshall that data into a map of AttributeValue object
-	av, err := dynamodbattribute.MarshalMap(requestBody)
+	av, err := dynamodbattribute.MarshalMap(update)
 
 	// Create DynamoDB client
 	sess, err := session.NewSession(&aws.Config{})

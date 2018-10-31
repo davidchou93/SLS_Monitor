@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"davidchou93/serverless/stand/structs"
 	"encoding/json"
 	"fmt"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"log"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -25,7 +25,7 @@ type Request events.APIGatewayProxyRequest
 // Handler is our lambda handler invoked by the `lambda.Start` function call
 func Handler(ctx context.Context, request Request) (Response, error) {
 	requestBody := map[string]interface{}{}
-	user := tg.User{}
+	user := tgbotapi.User{}
 	fmt.Println(user)
 
 	err := json.Unmarshal([]byte(request.Body), &requestBody)
