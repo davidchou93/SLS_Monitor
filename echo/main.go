@@ -3,14 +3,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 )
 
 // Response is of type APIGatewayProxyResponse since we're leveraging the
@@ -23,7 +27,7 @@ type Request events.APIGatewayProxyRequest
 
 var (
 	ENDPOINT   = os.Getenv("CRYPTOWATCH")
-	OHLCSTRUCT = [6]string{"CloseTime", "OpenPrice", "HighPrice", "LowPrice", "ClosePrice", "Volume"}
+	OHLCSTRUCT = [6]string{"closeTime", "openPrice", "highPrice", "lowPrice", "closePrice", "volume"}
 )
 
 // Handler is our lambda handler invoked by the `lambda.Start` function call
@@ -49,14 +53,47 @@ func Handler(request Request) (Response, error) {
 	}
 	info := rMap["result"]["1800"].([]interface{})[0]
 	OHLC := map[string]float64{}
-	for index, value := range info.([]interface{}) {
-		OHLC[OHLCSTRUCT[index]] = value.(float64)
+	fmt.Println(info)
+	for index, value := range OHLCSTRUCT {
+		OHLC[value] = info.([]interface{})[index].(float64)
 	}
-	result, _ := json.Marshal(OHLC)
+
+	// Marshall that data into a map of AttributeValue object
+	av, err := dynamodbattribute.MarshalMap(OHLC)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	// Create DynamoDB client
+	sess, err := session.NewSession(&aws.Config{})
+	svc := dynamodb.New(sess)
+	input := &dynamodb.PutItemInput{
+		Item:      av,
+		TableName: aws.String("BTC_30m"),
+	}
+
+	_, err = svc.PutItem(input)
+
+	if err != nil {
+		log.Println("Got error calling PutItem:")
+		log.Println(err.Error())
+		return Response{StatusCode: 500, Body: err.Error()}, nil
+	}
+	result := map[string]interface{}{}
+	priceChange := math.Abs((OHLC["closePrice"] - OHLC["openPrice"]) / OHLC["openPrice"])
+	if priceChange > 0.05 {
+		result["message"] = fmt.Sprintf("[PRICE CHANGE] Notification:%.2f%", priceChange*100)
+	} else {
+		result["message"] = "Nothing happened"
+	}
+	for key, value := range OHLC {
+		result[key] = value
+	}
+	body, _ := json.Marshal(result)
 	resp := Response{
 		StatusCode:      200,
 		IsBase64Encoded: false,
-		Body:            string(result),
+		Body:            string(body),
 		Headers: map[string]string{
 			"Content-Type":           "application/json",
 			"X-MyCompany-Func-Reply": "echo-handler",

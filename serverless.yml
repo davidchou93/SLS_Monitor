@@ -60,6 +60,8 @@ functions:
       - http:
           path: echo
           method: post
+      - schedule:
+          rate: rate(30 minutes)
   receiver:
     handler: bin/receiver
     events:

@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Local Test Serverless'
+Resources:
+  EchoFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: bin/echo
+      Runtime: go1.x
+      Policies: []
+      Events:
+        APIGateway:
+          Type: Api
+          Properties:
+            Path: /echo
+            Method: post
+  DBTest:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: closeTim
+        Type: Number
+      TableName: BTC_30m
