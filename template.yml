@@ -1,11 +1,15 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: 'Local Test Serverless'
+Globals:
+  Function:
+    Timeout: 5
 Resources:
   EchoFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
       Handler: bin/echo
+      Tracing: Active
       Runtime: go1.x
       Policies: []
       Events:
@@ -14,10 +18,16 @@ Resources:
           Properties:
             Path: /echo
             Method: post
-  DBTest:
-    Type: AWS::Serverless::SimpleTable
-    Properties:
-      PrimaryKey:
-        Name: closeTim
-        Type: Number
-      TableName: BTC_30m
+      Environment:
+        Variables:
+          CRYPTOWATCH: 'https://api.cryptowat.ch'
+          AWS_SAM_LOCAL: 'true'
+  # BTC30m:
+  #   TableName: BTC_30m
+  #   Type: 'AWS::Serverless::SimpleTable'
+  #   PrimaryKey:
+  #     Name: 'closeTime'
+  #     Type: String
+  #   ProvisionedThroughput:
+  #     ReadCapacityUnits: 5
+  #     WriteCapacityUnits: 5

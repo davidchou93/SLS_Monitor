@@ -1,0 +1,14 @@
+{
+    "TableName": "BTC_30m",
+    "KeySchema": [
+      { "AttributeName": "closeTime", "KeyType": "HASH" }
+    ],
+    "AttributeDefinitions": [
+      { "AttributeName": "closeTime", "AttributeType": "N" }
+    ],
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 5,
+      "WriteCapacityUnits": 5
+    }
+}
+

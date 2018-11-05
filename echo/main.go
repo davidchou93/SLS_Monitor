@@ -3,18 +3,19 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
 // Response is of type APIGatewayProxyResponse since we're leveraging the
@@ -64,14 +65,19 @@ func Handler(request Request) (Response, error) {
 		log.Println(err.Error())
 	}
 
-	// Create DynamoDB client
-	sess, err := session.NewSession(&aws.Config{})
+	sess := session.Must(session.NewSession())
 	svc := dynamodb.New(sess)
+	// Create DynamoDB client
+	if os.Getenv("AWS_SAM_LOCAL") == "true" {
+		log.Println("Serving in Local Environment...")
+		// svc = dynamodb.New(sess, aws.NewConfig().WithEndpoint("http://172.22.240.1:8000"))
+		svc = dynamodb.New(sess, aws.NewConfig().WithEndpoint("http://host.docker.internal:8000"))
+	}
+
 	input := &dynamodb.PutItemInput{
 		Item:      av,
 		TableName: aws.String("BTC_30m"),
 	}
-
 	_, err = svc.PutItem(input)
 
 	if err != nil {
@@ -82,7 +88,7 @@ func Handler(request Request) (Response, error) {
 	result := map[string]interface{}{}
 	priceChange := math.Abs((OHLC["closePrice"] - OHLC["openPrice"]) / OHLC["openPrice"])
 	if priceChange > 0.05 {
-		result["message"] = fmt.Sprintf("[PRICE CHANGE] Notification:%.2f%", priceChange*100)
+		result["message"] = fmt.Sprintf("[PRICE CHANGE] Notification:%.2f%%", priceChange*100)
 	} else {
 		result["message"] = "Nothing happened"
 	}
