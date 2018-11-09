@@ -59,7 +59,7 @@ func Handler(ctx context.Context, request Request) (Response, error) {
 			} else {
 				message = arguments
 			}
-			if strings.Count(message, "")-1 >= 2 {
+			if c := strings.Count(message, "") - 1; c >= 2 && c < 500 {
 				svc := polly.New(session.New())
 				input := &polly.SynthesizeSpeechInput{
 					// LexiconNames: []*string{
@@ -89,8 +89,10 @@ func Handler(ctx context.Context, request Request) (Response, error) {
 				}
 				voiceConfig := tgbotapi.NewVoiceUpload(update.Message.Chat.ID, fileBytes)
 				bot.Send(voiceConfig)
+				msg.Text = ""
+			} else {
+				msg.Text = "Can't handle that message."
 			}
-			msg.Text = ""
 		default:
 			msg.Text = "I don't know that command"
 		}
