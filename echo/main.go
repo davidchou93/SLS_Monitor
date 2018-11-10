@@ -3,19 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
 // Response is of type APIGatewayProxyResponse since we're leveraging the
@@ -29,6 +25,7 @@ type Request events.APIGatewayProxyRequest
 var (
 	ENDPOINT   = os.Getenv("CRYPTOWATCH")
 	OHLCSTRUCT = [6]string{"closeTime", "openPrice", "highPrice", "lowPrice", "closePrice", "volume"}
+	BOT_TOKEN  = os.Getenv("BOT_TOKEN")
 )
 
 // Handler is our lambda handler invoked by the `lambda.Start` function call
@@ -44,6 +41,7 @@ func Handler(request Request) (Response, error) {
 	if err != nil {
 		log.Println(err.Error())
 	}
+
 	rMap := map[string]map[string]interface{}{
 		"result":    make(map[string]interface{}),
 		"allowance": make(map[string]interface{}),
@@ -59,36 +57,38 @@ func Handler(request Request) (Response, error) {
 		OHLC[value] = info.([]interface{})[index].(float64)
 	}
 
-	// Marshall that data into a map of AttributeValue object
-	av, err := dynamodbattribute.MarshalMap(OHLC)
-	if err != nil {
-		log.Println(err.Error())
-	}
+	// // Marshall that data into a map of AttributeValue object
+	// av, err := dynamodbattribute.MarshalMap(OHLC)
+	// if err != nil {
+	// log.Println(err.Error())
+	// }
 
-	sess := session.Must(session.NewSession())
-	svc := dynamodb.New(sess)
-	// Create DynamoDB client
-	if os.Getenv("AWS_SAM_LOCAL") == "true" {
-		log.Println("Serving in Local Environment...")
-		// svc = dynamodb.New(sess, aws.NewConfig().WithEndpoint("http://172.22.240.1:8000"))
-		svc = dynamodb.New(sess, aws.NewConfig().WithEndpoint("http://host.docker.internal:8000"))
-	}
+	// sess := session.Must(session.NewSession())
+	// svc := dynamodb.New(sess)
+	// // Create DynamoDB client
+	// if os.Getenv("AWS_SAM_LOCAL") == "true" {
+	// log.Println("Serving in Local Environment...")
+	// // svc = dynamodb.New(sess, aws.NewConfig().WithEndpoint("http://172.22.240.1:8000"))
+	// svc = dynamodb.New(sess, aws.NewConfig().WithEndpoint("http://host.docker.internal:8000"))
+	// }
 
-	input := &dynamodb.PutItemInput{
-		Item:      av,
-		TableName: aws.String("BTC_30m"),
-	}
-	_, err = svc.PutItem(input)
+	// input := &dynamodb.PutItemInput{
+	// Item:      av,
+	// TableName: aws.String("BTC_30m"),
+	// }
+	// _, err = svc.PutItem(input)
 
-	if err != nil {
-		log.Println("Got error calling PutItem:")
-		log.Println(err.Error())
-		return Response{StatusCode: 500, Body: err.Error()}, nil
-	}
+	// if err != nil {
+	// log.Println("Got error calling PutItem:")
+	// log.Println(err.Error())
+	// return Response{StatusCode: 500, Body: err.Error()}, nil
+	// }
 	result := map[string]interface{}{}
 	priceChange := math.Abs((OHLC["closePrice"] - OHLC["openPrice"]) / OHLC["openPrice"])
 	if priceChange > 0.05 {
-		result["message"] = fmt.Sprintf("[PRICE CHANGE] Notification:%.2f%%", priceChange*100)
+		bot, _ := tgbotapi.NewBotAPI(BOT_TOKEN)
+		msg := tgbotapi.NewMessageToChannel("@Davids_WeatherForecast", fmt.Sprintf("[PRICE CHANGE] Notification:%.2f%%", priceChange*100))
+		bot.Send(msg)
 	} else {
 		result["message"] = "Nothing happened"
 	}
