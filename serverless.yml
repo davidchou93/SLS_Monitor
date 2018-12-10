@@ -121,21 +121,21 @@ functions:
 
 # you can add CloudFormation resource templates here
 
-resources:
-  Resources:
-    PriceTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: BTC_30m
-        AttributeDefinitions:
-          - AttributeName: closeTime
-            AttributeType: N
-        KeySchema:
-          - AttributeName: closeTime
-            KeyType: HASH
-        ProvisionedThroughput:
-            ReadCapacityUnits: 5
-            WriteCapacityUnits: 5
+# resources:
+  # Resources:
+    # PriceTable:
+      # Type: AWS::DynamoDB::Table
+      # Properties:
+        # TableName: BTC_30m
+        # AttributeDefinitions:
+          # - AttributeName: closeTime
+            # AttributeType: N
+        # KeySchema:
+          # - AttributeName: closeTime
+            # KeyType: HASH
+        # ProvisionedThroughput:
+            # ReadCapacityUnits: 5
+            # WriteCapacityUnits: 5
 #resources:
 #  Resources:
 #    NewResource:

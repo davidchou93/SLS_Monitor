@@ -85,7 +85,7 @@ func Handler(request Request) (Response, error) {
 	// }
 	result := map[string]interface{}{}
 	priceChange := math.Abs((OHLC["closePrice"] - OHLC["openPrice"]) / OHLC["openPrice"])
-	if priceChange > 0.05 {
+	if priceChange > 0.03 {
 		bot, _ := tgbotapi.NewBotAPI(BOT_TOKEN)
 		msg := tgbotapi.NewMessageToChannel("@Davids_WeatherForecast", fmt.Sprintf("[PRICE CHANGE] Notification:%.2f%%", priceChange*100))
 		bot.Send(msg)

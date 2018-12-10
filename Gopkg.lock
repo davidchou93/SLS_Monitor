@@ -15,7 +15,7 @@
   version = "v1.6.0"
 
 [[projects]]
-  digest = "1:2d546b3d90536d00167bfc0f7cbe3b17e7589e08ad923e041549889cbc8c0ab5"
+  digest = "1:1f0aef9cfd2629fb47d9852c05357e0a0a59ddcf479f4c1028c2819743fe73e9"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -28,6 +28,7 @@
     "aws/credentials/ec2rolecreds",
     "aws/credentials/endpointcreds",
     "aws/credentials/stscreds",
+    "aws/crr",
     "aws/csm",
     "aws/defaults",
     "aws/ec2metadata",
@@ -54,8 +55,8 @@
     "service/sts",
   ]
   pruneopts = ""
-  revision = "870fa4307c5f57c14153c695df7b87af1acdcbf1"
-  version = "v1.15.66"
+  revision = "5ebc7a404e942062fd3aa7ff50975498716eb990"
+  version = "v1.15.78"
 
 [[projects]]
   digest = "1:b0f81d29fcc8df568a060df5ef86e6aed544003e2c65007541cca17a83605768"
