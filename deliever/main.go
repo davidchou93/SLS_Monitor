@@ -3,15 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-telegram-bot-api/telegram-bot-api"
-	"log"
+	"os"
 
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
 // Response is of type APIGatewayProxyResponse since we're leveraging the
@@ -21,33 +17,37 @@ import (
 type Response events.APIGatewayProxyResponse
 type Request events.APIGatewayProxyRequest
 
+var(
+	BOT_TOKEN   = os.Getenv("BOT_TOKEN")
+)
+
 // Handler is our lambda handler invoked by the `lambda.Start` function call
 func Handler(ctx context.Context, request Request) (Response, error) {
+	bot, err := tgbotapi.NewBotAPI(BOT_TOKEN)
+	bot.Debug = true
 	update := tgbotapi.Update{}
-	err := json.Unmarshal([]byte(request.Body), &update)
+	err = json.Unmarshal([]byte(request.Body), &update)
 	if err != nil {
 		return Response{StatusCode: 400}, nil
 	}
-
-	// Marshall that data into a map of AttributeValue object
-	av, err := dynamodbattribute.MarshalMap(update)
-
-	// Create DynamoDB client
-	sess, err := session.NewSession(&aws.Config{})
-	svc := dynamodb.New(sess)
-	input := &dynamodb.PutItemInput{
-		Item:      av,
-		TableName: aws.String("BotUpdates"),
+	if update.Message == nil{
+		return Response{StatusCode: 200,Body:"Empty message from TG, do nothing."},nil
 	}
-
-	_, err = svc.PutItem(input)
-
-	if err != nil {
-		log.Println("Got error calling PutItem:")
-		log.Println(err.Error())
-		return Response{StatusCode: 500, Body: err.Error()}, nil
+	
+	if update.Message.IsCommand() {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID,"")
+		switch update.Message.Command(){
+		case "help":
+			msg.Text = "type /sayhi or /status."
+		case "sayhi":
+			msg.Text = "Hi :)"
+		case "status":
+			msg.Text = "I'm ok."
+		default:
+			msg.Text = "I don't know that command"
+		}
+		bot.Send(msg)
 	}
-
 	result, _ := json.Marshal(map[string]string{"message": "succeed"})
 	resp := Response{
 		StatusCode:      200,
