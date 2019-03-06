@@ -13,11 +13,21 @@
 
 service: stand # NOTE: update this with your service name
 
+
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
 # frameworkVersion: "=X.X.X"
 frameworkVersion: ">=1.28.0 <2.0.0"
 
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+custom:
+  dynamodb:
+    start:
+      migrate: true
+      # seed: true
+      sharedDb: true
 provider:
   name: aws
   runtime: go1.x
@@ -109,6 +119,22 @@ functions:
 #      variable2: value2
 
 # you can add CloudFormation resource templates here
+
+# resources:
+  # Resources:
+    # PriceTable:
+      # Type: AWS::DynamoDB::Table
+      # Properties:
+        # TableName: BTC_30m
+        # AttributeDefinitions:
+          # - AttributeName: closeTime
+            # AttributeType: N
+        # KeySchema:
+          # - AttributeName: closeTime
+            # KeyType: HASH
+        # ProvisionedThroughput:
+            # ReadCapacityUnits: 5
+            # WriteCapacityUnits: 5
 #resources:
 #  Resources:
 #    NewResource:

@@ -3,11 +3,19 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"os"
-
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/polly"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
+	"time"
 )
 
 // Response is of type APIGatewayProxyResponse since we're leveraging the
@@ -30,23 +38,67 @@ func Handler(ctx context.Context, request Request) (Response, error) {
 	if err != nil {
 		return Response{StatusCode: 400}, nil
 	}
-	if update.Message == nil{
-		return Response{StatusCode: 200,Body:"Empty message from TG, do nothing."},nil
+	if update.Message == nil {
+		return Response{StatusCode: 200, Body: "Empty message from TG, do nothing."}, nil
 	}
-	
 	if update.Message.IsCommand() {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID,"")
-		switch update.Message.Command(){
-		case "help":
-			msg.Text = "type /sayhi or /status."
-		case "sayhi":
-			msg.Text = "Hi :)"
-		case "status":
-			msg.Text = "I'm ok."
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+		switch update.Message.Command() {
+		case "echo":
+			arguments := update.Message.CommandArguments()
+			if strings.HasPrefix(arguments, "@") {
+				msg.Text = strings.SplitN(arguments, " ", 2)[1]
+			} else {
+				msg.Text = arguments
+			}
+		case "speak":
+			arguments := update.Message.CommandArguments()
+			message := ""
+			if strings.HasPrefix(arguments, "@") {
+				message = strings.SplitN(arguments, " ", 2)[1]
+			} else {
+				message = arguments
+			}
+			if c := strings.Count(message, "") - 1; c >= 2 && c < 500 {
+				svc := polly.New(session.New())
+				input := &polly.SynthesizeSpeechInput{
+					// LexiconNames: []*string{
+					// aws.String(fmt.Sprintf("voice%d",time.Unix()),
+					// },
+					LanguageCode: aws.String("cmn-CN"),
+					OutputFormat: aws.String("ogg_vorbis"),
+					SampleRate:   aws.String("8000"),
+					Text:         aws.String(message),
+					TextType:     aws.String("text"),
+					VoiceId:      aws.String("Zhiyu"),
+				}
+				v, err := svc.SynthesizeSpeech(input)
+				if err != nil {
+					if aerr, ok := err.(awserr.Error); ok {
+						log.Println(aerr.Error())
+						return Response{StatusCode: 400, Body: "Polly failed to transfer message."}, nil
+					} else {
+						log.Println(err.Error())
+					}
+				}
+				// Transfer audiofile into []Bytes
+				audioFile, err := ioutil.ReadAll(v.AudioStream)
+				fileBytes := tgbotapi.FileBytes{
+					Name:  fmt.Sprintf("voice%d", time.Now().Unix()),
+					Bytes: audioFile,
+				}
+				voiceConfig := tgbotapi.NewVoiceUpload(update.Message.Chat.ID, fileBytes)
+				bot.Send(voiceConfig)
+				msg.Text = ""
+			} else {
+				msg.Text = "Can't handle that message."
+			}
 		default:
 			msg.Text = "I don't know that command"
 		}
-		bot.Send(msg)
+		if msg.Text != "" {
+			bot.Send(msg)
+		}
 	}
 	result, _ := json.Marshal(map[string]string{"message": "succeed"})
 	resp := Response{
