@@ -4,18 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/polly"
-	"github.com/go-telegram-bot-api/telegram-bot-api"
-	"io/ioutil"
-	"log"
-	"os"
-	"strings"
-	"time"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 // Response is of type APIGatewayProxyResponse since we're leveraging the
@@ -25,8 +26,8 @@ import (
 type Response events.APIGatewayProxyResponse
 type Request events.APIGatewayProxyRequest
 
-var(
-	BOT_TOKEN   = os.Getenv("BOT_TOKEN")
+var (
+	BOT_TOKEN = os.Getenv("BOT_TOKEN")
 )
 
 // Handler is our lambda handler invoked by the `lambda.Start` function call
@@ -93,6 +94,15 @@ func Handler(ctx context.Context, request Request) (Response, error) {
 			} else {
 				msg.Text = "Can't handle that message."
 			}
+		case "face":
+			arguments := update.Message.CommandArguments()
+			if arguments == "" || len(arguments) >= 64 {
+				msg.Text = "Bad face seed"
+				break
+			}
+			target := fmt.Sprintf("https://api.adorable.io/avatars/285/%s.png", arguments)
+			pic := tgbotapi.NewPhotoShare(update.Message.Chat.ID, target)
+			bot.Send(pic)
 		default:
 			msg.Text = "I don't know that command"
 		}

@@ -19,9 +19,9 @@ service: stand # NOTE: update this with your service name
 # frameworkVersion: "=X.X.X"
 frameworkVersion: ">=1.28.0 <2.0.0"
 
-plugins:
-  - serverless-dynamodb-local
-  - serverless-offline
+# plugins:
+  # - serverless-dynamodb-local
+  # - serverless-offline
 custom:
   dynamodb:
     start:
