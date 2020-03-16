@@ -33,11 +33,11 @@ var (
 func Handler(request Request) (Response, error) {
 	timestamp := int(time.Now().Unix())
 	result := map[string]interface{}{}
-	todoList := []string{"btcusd", "xrpusd", "ethusd", "ltcusd"}
+	todoList := []string{"btcusdt"}
 	bot, _ := tgbotapi.NewBotAPI(BOT_TOKEN)
 	msg := tgbotapi.NewMessageToChannel("-1001275593710", "Price Change:\n")
 	for _, s := range todoList {
-		target := fmt.Sprintf("%s/markets/bitfinex/%s/ohlc?periods=1800&before=%d&after=%d", ENDPOINT, s, timestamp, timestamp)
+		target := fmt.Sprintf("%s/markets/binance/%s/ohlc?periods=300&before=%d&after=%d", ENDPOINT, s, timestamp, timestamp)
 
 		r, err := http.Get(target)
 		if err != nil {
@@ -57,7 +57,7 @@ func Handler(request Request) (Response, error) {
 		if err != nil {
 			log.Printf("Unmarshal failed:%s", err.Error())
 		}
-		info := rMap["result"]["1800"].([]interface{})[0]
+		info := rMap["result"]["300"].([]interface{})[0]
 		OHLC := map[string]float64{}
 		fmt.Println(info)
 		for index, value := range OHLCSTRUCT {
