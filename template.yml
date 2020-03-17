@@ -22,28 +22,28 @@ Resources:
           Properties:
             Path: /echo
             Method: post
-  Deliever:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: bin/deliever
-      Tracing: Active
-      Runtime: go1.x
-      Policies: []
-      Environment:
-        Variables:
-          BOT_TOKEN: '542124038:AAHxIBYuN0yFiPeyyJICsZdqf5hplaMh7r0'
-      Events:
-        APIGateway:
-          Type: Api
-          Properties:
-            Path: /deliever
-            Method: post
-  SimpleTable:
-    TableName: BTC_30m
-    Type: 'AWS::Serverless::SimpleTable'
-    PrimaryKey:
-      Name: 'closeTime'
-      Type: String
-    ProvisionedThroughput:
-      ReadCapacityUnits: 5
-      WriteCapacityUnits: 5
+  # Deliever:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     Handler: bin/deliever
+  #     Tracing: Active
+  #     Runtime: go1.x
+  #     Policies: []
+  #     Environment:
+  #       Variables:
+  #         BOT_TOKEN: '542124038:AAHxIBYuN0yFiPeyyJICsZdqf5hplaMh7r0'
+  #     Events:
+  #       APIGateway:
+  #         Type: Api
+  #         Properties:
+  #           Path: /deliever
+  #           Method: post
+  # SimpleTable:
+  #   TableName: BTC_30m
+  #   Type: 'AWS::Serverless::SimpleTable'
+  #   PrimaryKey:
+  #     Name: 'closeTime'
+  #     Type: String
+  #   ProvisionedThroughput:
+  #     ReadCapacityUnits: 5
+  #     WriteCapacityUnits: 5

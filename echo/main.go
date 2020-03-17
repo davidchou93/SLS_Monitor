@@ -25,20 +25,22 @@ type Request events.APIGatewayProxyRequest
 
 var (
 	ENDPOINT   = os.Getenv("CRYPTOWATCH")
-	OHLCSTRUCT = [6]string{"closeTime", "openPrice", "highPrice", "lowPrice", "closePrice", "volume"}
+	OHLCSTRUCT = [7]string{"closeTime", "openPrice", "highPrice", "lowPrice", "closePrice", "volume", "quoteVolume"}
 	BOT_TOKEN  = os.Getenv("BOT_TOKEN")
 )
 
 // Handler is our lambda handler invoked by the `lambda.Start` function call
 func Handler(request Request) (Response, error) {
-	timestamp := int(time.Now().Unix())
+	now := time.Now().Unix()
+	after := time.Now().Add(-5 * time.Minute).Unix()
 	result := map[string]interface{}{}
 	todoList := []string{"btcusdt"}
 	bot, _ := tgbotapi.NewBotAPI(BOT_TOKEN)
-	msg := tgbotapi.NewMessageToChannel("-1001275593710", "Price Change:\n")
+	msg := tgbotapi.NewMessageToChannel("-1001275593710", "")
 	for _, s := range todoList {
-		target := fmt.Sprintf("%s/markets/binance/%s/ohlc?periods=300&before=%d&after=%d", ENDPOINT, s, timestamp, timestamp)
+		target := fmt.Sprintf("%s/markets/binance/%s/ohlc?periods=300&before=%d&after=%d", ENDPOINT, s, now, after)
 
+		msg.Text += fmt.Sprintln(strings.ToUpper(s))
 		r, err := http.Get(target)
 		if err != nil {
 			return Response{StatusCode: 404, Body: err.Error()}, nil
@@ -59,43 +61,25 @@ func Handler(request Request) (Response, error) {
 		}
 		info := rMap["result"]["300"].([]interface{})[0]
 		OHLC := map[string]float64{}
-		fmt.Println(info)
 		for index, value := range OHLCSTRUCT {
 			OHLC[value] = info.([]interface{})[index].(float64)
 		}
 
-		// // Marshall that data into a map of AttributeValue object
-		// av, err := dynamodbattribute.MarshalMap(OHLC)
-		// if err != nil {
-		// log.Println(err.Error())
-		// }
-
-		// sess := session.Must(session.NewSession())
-		// svc := dynamodb.New(sess)
-		// // Create DynamoDB client
-		// if os.Getenv("AWS_SAM_LOCAL") == "true" {
-		// log.Println("Serving in Local Environment...")
-		// // svc = dynamodb.New(sess, aws.NewConfig().WithEndpoint("http://172.22.240.1:8000"))
-		// svc = dynamodb.New(sess, aws.NewConfig().WithEndpoint("http://host.docker.internal:8000"))
-		// }
-
-		// input := &dynamodb.PutItemInput{
-		// Item:      av,
-		// TableName: aws.String("BTC_30m"),
-		// }
-		// _, err = svc.PutItem(input)
-
-		// if err != nil {
-		// log.Println("Got error calling PutItem:")
-		// log.Println(err.Error())
-		// return Response{StatusCode: 500, Body: err.Error()}, nil
-		// }
+		msg.Text += fmt.Sprintln("------")
 		priceChange := (OHLC["closePrice"] - OHLC["openPrice"]) / OHLC["openPrice"]
-		msg.Text += fmt.Sprintf("%s:\n Changed %.2f%%\n ClosePrice $%.2f\n", strings.ToUpper(s), priceChange*100, OHLC["closePrice"])
+		fluctuation := (OHLC["highPrice"] - OHLC["lowPrice"]) / OHLC["openPrice"]
+		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "PriceChange", priceChange*100)
+		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "Fluctuation", fluctuation*100)
+
+		msg.Text += fmt.Sprintln("------")
+		for key, value := range OHLC {
+			msg.Text += fmt.Sprintf("%s:%f\n", strings.Title(key), value)
+		}
 		result[s] = make(map[string]float64)
 		for key, value := range OHLC {
 			result[s].(map[string]float64)[key] = value
 		}
+		msg.Text += fmt.Sprintln("======")
 	}
 	_, sendErr := bot.Send(msg)
 	if sendErr != nil {

@@ -22,12 +22,12 @@ frameworkVersion: ">=1.28.0 <2.0.0"
 # plugins:
   # - serverless-dynamodb-local
   # - serverless-offline
-custom:
-  dynamodb:
-    start:
-      migrate: true
-      # seed: true
-      sharedDb: true
+# custom:
+#   dynamodb:
+#     start:
+#       migrate: true
+#       # seed: true
+#       sharedDb: true
 provider:
   name: aws
   runtime: go1.x
@@ -71,7 +71,7 @@ functions:
           path: echo
           method: post
       - schedule:
-          rate: rate(30 minutes)
+          rate: rate(5 minutes)
   # receiver:
   #   handler: bin/receiver
   #   events:
