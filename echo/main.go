@@ -68,7 +68,7 @@ func Handler(request Request) (Response, error) {
 		msg.Text += fmt.Sprintln("======")
 		priceChange := (OHLC["closePrice"] - OHLC["openPrice"]) / OHLC["openPrice"]
 		fluctuation := (OHLC["highPrice"] - OHLC["lowPrice"]) / OHLC["openPrice"]
-		if priceChange*100 >= 0.01 || fluctuation*100 >= 0.05 {
+		if priceChange >= 0.01 || fluctuation >= 0.05 {
 			msg.Text += fmt.Sprintln("<- NEED NOTICE ->")
 			msg.Text += fmt.Sprintln("======")
 		}
@@ -76,12 +76,13 @@ func Handler(request Request) (Response, error) {
 		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "Fluctuation", fluctuation*100)
 		msg.Text += fmt.Sprintln("======")
 
-		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "OpenPrice", OHLC["openPrice"])
-		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "ClosePrice", OHLC["closePrice"])
-		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "HighPrice", OHLC["highPrice"])
-		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "LowPrice", OHLC["lowPrice"])
-		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "Volumn", OHLC["volumn"])
-		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "QuoteVolumn", OHLC["quoteVolumn"])
+		msg.Text += fmt.Sprintf("%s:  %.2f\n", "OpenPrice", OHLC["openPrice"])
+		msg.Text += fmt.Sprintf("%s:  %.2f\n", "ClosePrice", OHLC["closePrice"])
+		msg.Text += fmt.Sprintf("%s:  %.2f\n", "HighPrice", OHLC["highPrice"])
+		msg.Text += fmt.Sprintf("%s:  %.2f\n", "LowPrice", OHLC["lowPrice"])
+		msg.Text += fmt.Sprintf("%s:  %.1f\n", "Volume", OHLC["volume"])
+		msg.Text += fmt.Sprintf("%s:  %.1f\n", "QuoteVolume", OHLC["quoteVolume"])
+		msg.Text += fmt.Sprintf("%s:  %s\n", "CloseTime", time.Unix(int64(OHLC["closeTime"]), 0).Format("20060102-15:05"))
 
 		result[s] = make(map[string]float64)
 		for key, value := range OHLC {
