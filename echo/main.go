@@ -39,7 +39,7 @@ func Handler(request Request) (Response, error) {
 	msg := tgbotapi.NewMessageToChannel("-1001275593710", "")
 	for _, s := range todoList {
 		target := fmt.Sprintf("%s/markets/binance/%s/ohlc?periods=300&before=%d&after=%d", ENDPOINT, s, now, after)
-
+		msg.Text += fmt.Sprintln("======")
 		msg.Text += fmt.Sprintln(strings.ToUpper(s))
 		r, err := http.Get(target)
 		if err != nil {
@@ -65,16 +65,24 @@ func Handler(request Request) (Response, error) {
 			OHLC[value] = info.([]interface{})[index].(float64)
 		}
 
-		msg.Text += fmt.Sprintln("------")
+		msg.Text += fmt.Sprintln("======")
 		priceChange := (OHLC["closePrice"] - OHLC["openPrice"]) / OHLC["openPrice"]
 		fluctuation := (OHLC["highPrice"] - OHLC["lowPrice"]) / OHLC["openPrice"]
+		if priceChange*100 >= 0.01 || fluctuation*100 >= 0.05 {
+			msg.Text += fmt.Sprintln("<- NEED NOTICE ->")
+			msg.Text += fmt.Sprintln("======")
+		}
 		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "PriceChange", priceChange*100)
 		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "Fluctuation", fluctuation*100)
+		msg.Text += fmt.Sprintln("======")
 
-		msg.Text += fmt.Sprintln("------")
-		for key, value := range OHLC {
-			msg.Text += fmt.Sprintf("%s:%f\n", strings.Title(key), value)
-		}
+		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "OpenPrice", OHLC["openPrice"])
+		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "ClosePrice", OHLC["closePrice"])
+		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "HighPrice", OHLC["highPrice"])
+		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "LowPrice", OHLC["lowPrice"])
+		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "Volumn", OHLC["volumn"])
+		msg.Text += fmt.Sprintf("%s:%.2f%%\n", "QuoteVolumn", OHLC["quoteVolumn"])
+
 		result[s] = make(map[string]float64)
 		for key, value := range OHLC {
 			result[s].(map[string]float64)[key] = value
